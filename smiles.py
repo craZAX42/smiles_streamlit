@@ -38,7 +38,7 @@ menu_id = hc.nav_bar(
 
 st.title('SMILES  + RDKit + Py3DMOL :smiley:')
 
-ss = SessionState.get(smile_models={}, smile_strings=[])
+ss = SessionState.get(smile_models={}, smile_strings=[], conformers=[])
 
 def get_pymol_style(style):
     return style
@@ -46,18 +46,32 @@ def get_pymol_style(style):
 def generate_HTML_name(style):
     return "viz_" + style + ".html"
 
-styles = ('stick','line','sphere')
+styles = ('stick', 'sphere', 'ball and stick')
 pymol_style = st.selectbox('Select 3D Style', styles)
 
 def create_models(smi, style):
     mol = Chem.MolFromSmiles(smi)
     mol = Chem.AddHs(mol)
     AllChem.EmbedMolecule(mol)
-    AllChem.MMFFOptimizeMolecule(mol, maxIters=200)
+    cids = Chem.rdDistGeom.EmbedMultipleConfs(mol)
+    for cid in cids:
+        AllChem.MMFFOptimizeMolecule(mol, maxIters=200, confId=cid)
+    ss.smile_models[smi][1]['cids'] = cids
+    ###############################################################
+    #   =============== TODO ===============
+    # * save view in our SessionState
+    # * Generate HTML from view when trying to display molecules
+    # * Add sidebar options for different conformer selections
+    ###############################################################
     mblock = Chem.MolToMolBlock(mol)
     view = py3Dmol.view(width=450, height=450)
-    view.addModel(mblock, 'mol')
-    view.setStyle({style:{}})
+    view.addModel(mblock, 'mol', {'keepH':False})
+    if style == 'ball and stick':
+        view.setStyle({'sphere':{'radius':0.5}, 'stick':{}})
+    elif style == 'sphere':
+        view.setStyle({'sphere':{'radius':1}})
+    else:
+        view.setStyle({style:{}})
     view.zoomTo()
     view.show()
     view.render()
@@ -87,8 +101,6 @@ def add_smiles(input_smiles):
         HtmlFile = open(html_name, 'r', encoding='utf-8')
         source_code = HtmlFile.read()
         ss.smile_models[input_smiles][1][style] = source_code
-
-        
         
 
 def display_smiles(first_smile, second_smile):
@@ -115,7 +127,7 @@ def display_smiles(first_smile, second_smile):
 input_smiles=st.text_input('Enter SMILES string\nLeft click, hold, then move mouse to rotate 3D view. \
                             Right click, hold then move mouse to zoom in/out.',\
                             'O=C1C2=C(N=CN2C)N(C)C(N1C)=O')
-print(input_smiles) # For debugging
+# print(input_smiles) # For debugging
 try:
     add_smiles(input_smiles)
 except BaseException:
@@ -125,5 +137,9 @@ except BaseException:
 second_index=[len(ss.smile_strings)-2 if len(ss.smile_strings) > 1 else 0][0]
 first_smile = st.sidebar.selectbox('Select your first desired SMILE', ss.smile_strings, index=len(ss.smile_strings)-1)
 second_smile = st.sidebar.selectbox('Select your second desired SMILE', ss.smile_strings, index=second_index)
+
+first_conf_id = st.sidebar.selectbox(first_smile, ss.smile_models[first_smile][1]['cids'])
+if first_smile != second_smile:
+    second_conf_id = st.sidebar.selectbox(second_smile, ss.smile_models[second_smile][1]['cids'])
 
 display_smiles(first_smile, second_smile)
