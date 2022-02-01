@@ -37,20 +37,20 @@ HTML_NAME = "viz.html"
 styles = ('stick', 'sphere', 'ball and stick')
 pymol_style = st.selectbox('Select 3D Style', styles)
 
-def generate_conformers(smi):
+def generate_conformers(smile):
     """Create a mol and list of conformer IDs from a smile and store it in the Session State.
 
     Args:
-        mol (rdkit molecule): The mol to generate conformers from
+        smile (string): The smile string to generate a molecule and conformers from
     """
-    mol = Chem.MolFromSmiles(input_smiles)
+    mol = Chem.MolFromSmiles(smile)
     mol = Chem.AddHs(mol)
     cids = AllChem.EmbedMultipleConfs(mol)
-    ss.smile_models[smi]['mol'] = mol
+    ss.smile_models[smile]['mol'] = mol
     #res = AllChem.MMFFOptimizeMoleculeConfs(mol, numThreads=0)
     #print("Res:", res)
     for cid in cids:
-        ss.smile_models[smi]['cids'][cid] = {}
+        ss.smile_models[smile]['cids'][cid] = {}
     
 def create_model(m, cid, style):
     """Creates a py3Dmol view and writes the result to an HTML file.
@@ -119,12 +119,12 @@ def display_smiles():
     with c2:
         components.html(ss.smile_models[second_smile]['cids'][second_conf_id][pymol_style], height=450,width=450)
 
-input_smiles=st.text_input('Enter SMILES string\nLeft click, hold, then move mouse to rotate 3D view. \
+input_smile=st.text_input('Enter SMILES string\nLeft click, hold, then move mouse to rotate 3D view. \
                             Right click, hold then move mouse to zoom in/out or use the scroll wheel.',\
                             'O=C1C2=C(N=CN2C)N(C)C(N1C)=O')
 
 try:
-    add_smile_and_conformers(input_smiles)
+    add_smile_and_conformers(input_smile)
 except BaseException:
         st.write('Invalid SMILES, please input a valid SMILES string.')
     
