@@ -10,54 +10,58 @@ import hydralit_components as hc
 
 st.set_page_config(layout='wide',initial_sidebar_state='collapsed',)
 
-menu_data = [
-    {'icon': "far fa-copy", 'label':"Left End"},
-    {'id':'Copy','icon':"🐙",'label':"Copy"},
-    {'icon': "fa-solid fa-radar",'label':"Dropdown1", 'submenu':[{'id':' subid11','icon': "fa fa-paperclip", 'label':"Sub-item 1"},{'id':'subid12','icon': "💀", 'label':"Sub-item 2"},{'id':'subid13','icon': "fa fa-database", 'label':"Sub-item 3"}]},
-]
+# menu_data = [
+#     {'icon': "far fa-copy", 'label':"Left End"},
+#     {'id':'Copy','icon':"🐙",'label':"Copy"},
+#     {'icon': "fa-solid fa-radar",'label':"Dropdown1", 'submenu':[{'id':' subid11','icon': "fa fa-paperclip", 'label':"Sub-item 1"},{'id':'subid12','icon': "💀", 'label':"Sub-item 2"},{'id':'subid13','icon': "fa fa-database", 'label':"Sub-item 3"}]},
+# ]
 
-over_theme = {'txc_inactive': '#FFFFFF'}
-menu_id = hc.nav_bar(
-    menu_definition=menu_data,
-    override_theme=over_theme,
-    home_name='Home',
-    login_name='Logout',
-    hide_streamlit_markers=False, #will show the st hamburger as well as the navbar now!
-    sticky_nav=True, #at the top or not
-    sticky_mode='pinned', #jumpy or not-jumpy, but sticky or pinned
-)
+# over_theme = {'txc_inactive': '#FFFFFF'}
+# menu_id = hc.nav_bar(
+#     menu_definition=menu_data,
+#     override_theme=over_theme,
+#     home_name='Home',
+#     login_name='Logout',
+#     hide_streamlit_markers=False, #will show the st hamburger as well as the navbar now!
+#     sticky_nav=True, #at the top or not
+#     sticky_mode='pinned', #jumpy or not-jumpy, but sticky or pinned
+# )
 
-st.title('SMILES  + RDKit + Py3DMOL :smiley:')
+st.title('SMILES Comparison :smile:')
 
 ss = SessionState.get(smile_models={}, smile_strings=[], conformers=[])
 
-def get_pymol_style(style):
-    return style
+HTML_NAME = "viz.html"
 
-def generate_HTML_name(style):
-    return "viz_" + style + ".html"
-
+## 3D MODEL STYLES ##
 styles = ('stick', 'sphere', 'ball and stick')
 pymol_style = st.selectbox('Select 3D Style', styles)
 
-def generate_cids(smi):
-    mol = Chem.MolFromSmiles(smi)
+def generate_conformers(smi):
+    """Create a mol and list of conformer IDs from a smile and store it in the Session State.
+
+    Args:
+        mol (rdkit molecule): The mol to generate conformers from
+    """
+    mol = Chem.MolFromSmiles(input_smiles)
     mol = Chem.AddHs(mol)
-    AllChem.EmbedMolecule(mol)
-    cids = AllChem.EmbedMultipleConfs(mol, numConfs=2)
+    cids = AllChem.EmbedMultipleConfs(mol)
+    ss.smile_models[smi]['mol'] = mol
+    #res = AllChem.MMFFOptimizeMoleculeConfs(mol, numThreads=0)
+    #print("Res:", res)
     for cid in cids:
-        AllChem.MMFFOptimizeMolecule(mol, maxIters=200, confId=cid)
-        ss.smile_models[smi][1][cid] = {}
-    
-    ###############################################################
-    #   =============== TODO ===============
-    # * Add sidebar options for different conformer selections []
-    ###############################################################
+        ss.smile_models[smi]['cids'][cid] = {}
     
 def create_model(m, cid, style):
-    print("Cid:", cid)
+    """Creates a py3Dmol view and writes the result to an HTML file.
+
+    Args:
+        m (rdkit molecule): The mol to generate a MolBlock from
+        cid (int): the conformer ID to use to generate the MolBlock
+        style (string): the style of model to generate
+    """
     view = py3Dmol.view(width=450, height=450)
-    mb = Chem.MolToMolBlock(m,confId=cid)
+    mb = Chem.MolToMolBlock(m, confId=cid)
     view.addModel(mb, 'mol', {'keepH':True}) # Set KeepH to False later
     if style == 'ball and stick':
         view.setStyle({'sphere':{'radius':0.5}, 'stick':{}})
@@ -69,77 +73,71 @@ def create_model(m, cid, style):
     view.show()
     view.render()
     t = view.js()
-    html_name = generate_HTML_name(style)
-    f = open(html_name, 'w')
+    f = open(HTML_NAME, 'w')
     f.write(t.startjs)
     f.write(t.endjs)
     f.close()
     
-def add_smiles(input_smiles):
+def add_smile_and_conformers(smile):
     """Take the smile the user input and add it to the list of smile strings
     along with their 2d and 3d structure.
 
     Args:
-        input_smiles (str): The string input of a smile provided by the user
+        smile (str): The smile string provided by the user
     """
-    if input_smiles in ss.smile_strings:
+    if smile in ss.smile_strings:
         return
-    m = Chem.MolFromSmiles(input_smiles)
-    ss.smile_strings.append(input_smiles)
-    ss.smile_models[input_smiles] = (m, {})
-    generate_cids(input_smiles)
+    ss.smile_strings.append(smile)
+    ss.smile_models[smile] = {'cids':{}}
+    generate_conformers(smile)
 
-    for cid in ss.smile_models[input_smiles][1].keys():
+    for cid in ss.smile_models[smile]['cids'].keys():
         for style in styles:
-            create_model(m, cid, style)
-            html_name = generate_HTML_name(style)
-            HtmlFile = open(html_name, 'r', encoding='utf-8')
+            create_model(ss.smile_models[smile]['mol'], cid, style)
+            HtmlFile = open(HTML_NAME, 'r', encoding='utf-8')
             source_code = HtmlFile.read()
-            ss.smile_models[input_smiles][1][cid][style] = source_code
+            ss.smile_models[smile]['cids'][cid][style] = source_code
         
 
-def display_smiles(first_smile, second_smile, first_conf_id, second_conf_id):
-    
+def display_smiles():
+    """Generates the 2d and 3d views of the two smiles selected from the sidebar.
+    """
     c1,c2=st.columns(2)
     with c1:
-        Draw.MolToFile(ss.smile_models[first_smile][0], 'mol.png')
+        Draw.MolToFile(ss.smile_models[first_smile]['mol'], 'mol.png')
         st.image('mol.png')
     with c2:
-        components.html(ss.smile_models[first_smile][1][first_conf_id][pymol_style],height=450,width=450)
-    
-    # print("first:", first_smile, "\tsecond:", second_smile)
-    
+        components.html(ss.smile_models[first_smile]['cids'][first_conf_id][pymol_style],height=450,width=450)
+
     if first_smile == second_smile:
         return
     
     c1,c2=st.columns(2)
     with c1:
-        Draw.MolToFile(ss.smile_models[second_smile][0], 'mol2.png')
+        Draw.MolToFile(ss.smile_models[second_smile]['mol'], 'mol2.png')
         st.image('mol2.png')
     with c2:
-        components.html(ss.smile_models[second_smile][1][second_conf_id][pymol_style], height=450,width=450)
+        components.html(ss.smile_models[second_smile]['cids'][second_conf_id][pymol_style], height=450,width=450)
 
 input_smiles=st.text_input('Enter SMILES string\nLeft click, hold, then move mouse to rotate 3D view. \
-                            Right click, hold then move mouse to zoom in/out.',\
+                            Right click, hold then move mouse to zoom in/out or use the scroll wheel.',\
                             'O=C1C2=C(N=CN2C)N(C)C(N1C)=O')
-# print(input_smiles) # For debugging
-#try:
-add_smiles(input_smiles)
-#except BaseException:
-#        st.write('Invalid SMILES, please input a valid SMILES string.')
+
+try:
+    add_smile_and_conformers(input_smiles)
+except BaseException:
+        st.write('Invalid SMILES, please input a valid SMILES string.')
     
-################ Sidebar ####################
+################## Sidebar ######################
 second_index=[len(ss.smile_strings)-2 if len(ss.smile_strings) > 1 else 0][0]
 first_smile = st.sidebar.selectbox('Select your first desired SMILE', ss.smile_strings, index=len(ss.smile_strings)-1)
 second_smile = st.sidebar.selectbox('Select your second desired SMILE', ss.smile_strings, index=second_index)
 
-print(ss.smile_strings)
-print(ss.smile_models)
+first_conf_id = st.sidebar.selectbox(first_smile, ss.smile_models[first_smile]['cids'].keys(), key=1)
+second_conf_id = st.sidebar.selectbox(second_smile, ss.smile_models[second_smile]['cids'].keys(), key=2)
 
-first_conf_id = st.sidebar.selectbox(first_smile, ss.smile_models[first_smile][1].keys())
-second_conf_id = st.sidebar.selectbox(second_smile, [])
-if first_smile != second_smile:
-    second_conf_id = st.sidebar.selectbox(second_smile, ss.smile_models[second_smile][1].keys())
+# print(ss.smile_strings) # For Debugging
+# print(ss.smile_models) # For Debugging
 
-
-display_smiles(first_smile, second_smile, first_conf_id, second_conf_id)
+########## Display 2D and 3D Structures ##########
+display_smiles()
