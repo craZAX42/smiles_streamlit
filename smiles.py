@@ -25,7 +25,9 @@ menu_id = hc.nav_bar(
 )
 
 if menu_id == 'SMILES':
-    st.title('Visualize SMILES Comparison in 3D :smile:')
+    st.title('Visualize and Compare SMILES in 3D :smile:')
+    st.write('View small molecules in 3D straight from a SMILES string. RDKit is used to generate coordinates and py3Dmol for structure rendering. A maximum of 10 conformers for each molecule is generated. To choose different conformers or previously entered molecules, they can be selected from the selectbox on the left. Hydrogen atoms (including polar) are not displayed for clarity.')
+    st.write('Only organic molecules are supported. Organometallics will cause an error.')
 
     ss = SessionState.get(smile_models={}, smile_strings=[], conformers=[])
 
@@ -50,6 +52,7 @@ if menu_id == 'SMILES':
         mol = Chem.AddHs(mol)
         cids = AllChem.EmbedMultipleConfs(mol)
         AllChem.MMFFOptimizeMoleculeConfs(mol, numThreads=0)
+        mol = Chem.RemoveHs(mol)
         ss.smile_models[smile]['conf_mol'] = mol
         for cid in cids:
             ss.smile_models[smile]['cids'][cid] = {}
@@ -106,7 +109,7 @@ if menu_id == 'SMILES':
         c1,c2=st.columns([1,2])
         with c1:
             AllChem.GenerateDepictionMatching3DStructure(ss.smile_models[first_smile]['original_mol'], ss.smile_models[first_smile]['conf_mol'])
-            Draw.MolToFile(ss.smile_models[first_smile]['conf_mol'], 'mol.png')
+            Draw.MolToFile(ss.smile_models[first_smile]['conf_mol'], 'mol.png',ignoreHs=True)
             st.image('mol.png')
         with c2:
             components.html(ss.smile_models[first_smile]['cids'][first_conf_id][pymol_style],width=WIDTH_3D, height=HEIGHT_3D)
@@ -144,4 +147,5 @@ if menu_id == 'SMILES':
     display_smiles()
 
 elif menu_id == 'About':
-    st.info("About page!")
+    st.info("CraZAX is a superstar undergrad student in a theoretical chemistry lab working to build capabilties and automate workflows.")
+    st.info("Although CraZAX is majoring in computer science, this project demonstrates his ability to solve a problem implementing programmatic solutions - tenacious-dk. I overlapped as a PhD student in the chemistry lab and now work for a big pharma company. Tech/Pharma companies, get your hands on CraZAX while you can.")
