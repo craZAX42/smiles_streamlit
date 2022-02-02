@@ -7,6 +7,8 @@ from rdkit import Chem
 from rdkit.Chem import Draw
 from rdkit.Chem import AllChem
 import hydralit_components as hc
+import copy
+from rdkit.Chem.Draw import rdDepictor
 
 st.set_page_config(layout='wide',)
 
@@ -105,11 +107,10 @@ if menu_id == 'SMILES':
     def display_smiles():
         """Generates the 2d and 3d views of the two smiles selected from the sidebar.
         """
-        ss.smile_models[first_smile]['mol'] = Chem.RemoveHs(ss.smile_models[first_smile]['conf_mol'])
         c1,c2=st.columns([1,2])
         with c1:
             AllChem.GenerateDepictionMatching3DStructure(ss.smile_models[first_smile]['original_mol'], ss.smile_models[first_smile]['conf_mol'])
-            Draw.MolToFile(ss.smile_models[first_smile]['conf_mol'], 'mol.png',ignoreHs=True)
+            Draw.MolToFile(ss.smile_models[first_smile]['original_mol'], 'mol.png',ignoreHs=True)
             st.image('mol.png')
         with c2:
             components.html(ss.smile_models[first_smile]['cids'][first_conf_id][pymol_style],width=WIDTH_3D, height=HEIGHT_3D)
@@ -121,7 +122,7 @@ if menu_id == 'SMILES':
         c1,c2=st.columns([1,2])
         with c1:
             AllChem.GenerateDepictionMatching3DStructure(ss.smile_models[second_smile]['original_mol'], ss.smile_models[second_smile]['conf_mol'])
-            Draw.MolToFile(ss.smile_models[second_smile]['conf_mol'], 'mol2.png')
+            Draw.MolToFile(ss.smile_models[second_smile]['original_mol'], 'mol2.png')
             st.image('mol2.png')
         with c2:
             components.html(ss.smile_models[second_smile]['cids'][second_conf_id][pymol_style],width=WIDTH_3D, height=HEIGHT_3D)
@@ -147,5 +148,5 @@ if menu_id == 'SMILES':
     display_smiles()
 
 elif menu_id == 'About':
-    st.info("CraZAX is a superstar undergrad student in a theoretical chemistry lab working to build capabilties and automate workflows.")
-    st.info("Although CraZAX is majoring in computer science, this project demonstrates his ability to solve a problem implementing programmatic solutions - tenacious-dk. I overlapped as a PhD student in the chemistry lab and now work for a big pharma company. Tech/Pharma companies, get your hands on CraZAX while you can.")
+    st.info("CraZAX is a superstar undergrad student in a computational chemistry lab working to build capabilties and automate workflows.")
+    st.info("Although CraZAX is majoring in computer science, this project demonstrates his ability to solve an out of domain chemistry problem implementing programmatic solutions. I overlapped as a PhD student in the chemistry lab and now work for a big pharma company. Tech/Pharma companies, get your hands on CraZAX while you can - tenacious-dk.")
