@@ -12,4 +12,4 @@ After you input SMILES strings to the textbox, you can compare the 2D and 3D str
 
 [The input and sidebar] <img src="https://github.com/craZAX42/smiles_streamlit/blob/main/images/navbar_style_input.png"> 
 
-[Two molecules]<img src="https://github.com/craZAX42/smiles_streamlit/blob/main/images/3dview_and_sidebar.png">
+[Two molecules]<img src="https://github.com/craZAX42/smiles_streamlit/blob/main/images/3dview.png">
