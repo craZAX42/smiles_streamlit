@@ -137,11 +137,8 @@ if menu_id == 'SMILES':
     first_smile = st.sidebar.selectbox('Select your first desired SMILE', ss.smile_strings, index=len(ss.smile_strings)-1)
     second_smile = st.sidebar.selectbox('Select your second desired SMILE', ss.smile_strings, index=second_index)
 
-    first_conf_id = st.sidebar.selectbox(first_smile, ss.smile_models[first_smile]['cids'].keys(), key=1)
-    second_conf_id = st.sidebar.selectbox(second_smile, ss.smile_models[second_smile]['cids'].keys(), key=2)
-
-    # print(ss.smile_strings) # For Debugging
-    # print(ss.smile_models) # For Debugging
+    first_conf_id = st.sidebar.selectbox(first_smile + " conformer", ss.smile_models[first_smile]['cids'].keys(), key=1)
+    second_conf_id = st.sidebar.selectbox(second_smile + " conformer", ss.smile_models[second_smile]['cids'].keys(), key=2)
 
     ########## Display 2D and 3D Structures ##########
     display_smiles()
