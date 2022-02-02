@@ -6,7 +6,7 @@ A streamlit webpage to compare two SMILES strings in 3D.
 If you want to run this on your own local machine, you can clone the repo and run `streamlit run smiles.py` from the directory with the `smiles.py` file.
 
 ## How It Works
-We're using RDKit to generate 3D coordinates of SMILES strings and py3Dmol renders the structure.
+We're using RDKit to generate 3D coordinates of SMILES strings and py3Dmol renders the structure deployed via streamlit. Hydralit components [hydralit](https://github.com/TangleSpace/hydralit_components) enables an easy way to setup a navigation bar.
 
 After you input SMILES strings to the textbox, you can compare the 2D and 3D structures side by side. There's a dropdown menu to select the style you want to render the models in. In the sidebar, you can select any two SMILES strings you've already input.
 
